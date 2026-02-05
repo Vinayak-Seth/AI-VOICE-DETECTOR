@@ -39,7 +39,8 @@ export default async function handler(req, res) {
     if (!audio) {
       return res.status(400).json({
         error: "Missing 'audio'",
-        message: "Send JSON body: { audio: <base64>, language: <string>, mimeType: <string optional> }",
+        message:
+          "Send JSON body: { audio: <base64>, language: <string>, mimeType: <string optional> }",
       });
     }
 
@@ -53,7 +54,8 @@ You are a specialized Audio Forensics AI in a Deepfake Detection Challenge.
 TASK: Classify the input audio as either "AI_GENERATED" or "HUMAN".
 LANGUAGE: ${lang}
 
-Return ONLY JSON with:
+Return ONLY a valid JSON object. No markdown, no code fences, no extra text.
+Required keys:
 - classification: "AI_GENERATED" or "HUMAN"
 - confidence: number between 0.0 and 1.0
 - explanation: short technical explanation
@@ -68,11 +70,16 @@ Return ONLY JSON with:
         ],
       },
       config: {
+        // ✅ Enforce JSON as much as possible
         responseMimeType: "application/json",
+        temperature: 0,
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            classification: { type: Type.STRING, enum: ["AI_GENERATED", "HUMAN"] },
+            classification: {
+              type: Type.STRING,
+              enum: ["AI_GENERATED", "HUMAN"],
+            },
             confidence: { type: Type.NUMBER },
             explanation: { type: Type.STRING },
           },
@@ -81,8 +88,24 @@ Return ONLY JSON with:
       },
     });
 
-    const out = JSON.parse(response.text);
-    return res.status(200).json(out);
+    // ✅ Robust JSON parsing (handles extra text if model misbehaves)
+    const raw = String(response?.text || "").trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      const start = raw.indexOf("{");
+      const end = raw.lastIndexOf("}");
+      if (start !== -1 && end !== -1 && end > start) {
+        const jsonChunk = raw.slice(start, end + 1);
+        parsed = JSON.parse(jsonChunk);
+      } else {
+        throw new Error("Invalid JSON returned by model: " + raw.slice(0, 200));
+      }
+    }
+
+    return res.status(200).json(parsed);
   } catch (e) {
     const msg = String(e?.message || e);
     return res.status(500).json({
