@@ -1,0 +1,7 @@
+{
+  "name": "VoiceGuard AI Detector",
+  "description": "An AI-powered system to detect whether a voice sample is AI-generated or human-spoken.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
