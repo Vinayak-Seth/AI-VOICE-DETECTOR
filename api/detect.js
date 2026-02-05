@@ -89,18 +89,19 @@ Return ONLY a valid JSON object (no markdown, no extra text) in this format:
 
     // ✅ Do NOT force responseMimeType/schema (prevents SDK "Invalid JSON" issues)
     const response = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
-      contents: {
-        parts: [
-          { inlineData: { mimeType: safeMime, data: base64Data } },
-          { text: prompt },
-        ],
-      },
-      config: {
-        temperature: 0,
-        maxOutputTokens: 512,
-      },
-    });
+  model: "gemini-1.5-flash",
+  contents: {
+    parts: [
+      { inlineData: { mimeType: safeMime, data: base64Data } },
+      { text: prompt },
+    ],
+  },
+  config: {
+    temperature: 0,
+    maxOutputTokens: 256,
+  },
+});
+
 
     const rawText = String(response?.text || "").trim();
 
